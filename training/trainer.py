@@ -98,6 +98,7 @@ def train(
     log_every: int = 100,             # steps
     start_step: int = 0,
 ):
+    log_file = open(f"{ckpt_path}_log.txt", "w")
     device = torch.device(device)
     generator = generator.to(device).train()
     discriminator = discriminator.to(device).train()
@@ -178,13 +179,16 @@ def train(
         #     metrics[k] += v.item() if torch.is_tensor(v) else float(v)
 
         if step % log_every == 0 and step > 0:
-          print(
-              f"step {step:7d}  kimg {kimg:8.1f}"
-              f"  d_loss {d_loss.item():.4f}"
-              f"  g_loss {g_loss.item():.4f}"
-              f"  ada_p {ada.p:.3f}"
-          )
-          metrics.clear()
+            log_line = (
+                f"step {step:7d}  kimg {kimg:8.1f}"
+                f"  d_loss {d_loss.item():.4f}"
+                f"  g_loss {g_loss.item():.4f}"
+                f"  ada_p {ada.p:.3f}\n"
+            )
+            print(log_line, end="")
+            log_file.write(log_line)
+            log_file.flush()
+            metrics.clear()
 
         # ------------------------------------------------------------------ #
         # 4.  Checkpointing
@@ -216,4 +220,5 @@ def train(
         ada_p=ada.p,
     )
     print("Training complete.")
+    log_file.close()
     return ema
