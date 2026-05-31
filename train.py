@@ -79,13 +79,13 @@ def main():
     print(f"Dataset loaded: {len(dataloader.dataset):,} images")
 
     # ------------------------------------------------------------------ #
-    # Models  –  replace with your imports
+    # Models 
     # ------------------------------------------------------------------ #
     generator     = Generator(z_dim=args.z_dim, img_resolution=args.image_size).to(device)
-    discriminator = Discriminator(img_resolution=args.image_size).to(device)
+    discriminator = Discriminator(img_resolution=args.image_size,channel_base=8192, channel_max=256).to(device)
 
     # ------------------------------------------------------------------ #
-    # Loss  –  replace with your import
+    # Loss
     # ------------------------------------------------------------------ #
     loss_fn       = StyleGAN2Loss(r1_gamma=10.0)
     ada = ADA(
