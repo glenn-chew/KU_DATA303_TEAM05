@@ -1,0 +1,20 @@
+# dataset
+ffhq_data/
+*.zip
+
+# checkpoints
+checkpoints/
+*.pt
+*.pth
+
+# generated samples
+samples/
+*.png
+
+# logs
+*.txt
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

@@ -13,7 +13,7 @@ def parse_args():
     p = argparse.ArgumentParser(description="StyleGAN2-ADA · FFHQ-64x64")
 
     # Data
-    p.add_argument("--batch_size",      type=int,   default=32)
+    p.add_argument("--batch_size",      type=int,   default=64)
     p.add_argument("--num_workers",     type=int,   default=4)
     p.add_argument("--image_size",      type=int,   default=64)
 
@@ -21,7 +21,7 @@ def parse_args():
     p.add_argument("--z_dim",           type=int,   default=512)
 
     # Training schedule
-    p.add_argument("--total_kimgs",     type=float, default=3000)
+    p.add_argument("--total_kimgs",     type=float, default=2000)
     p.add_argument("--d_reg_every",     type=int,   default=16,
                    help="R1 regularisation interval (lazy reg)")
     p.add_argument("--g_reg_every",     type=int,   default=4,
@@ -37,19 +37,19 @@ def parse_args():
 
     # ADA
     p.add_argument("--ada_target",      type=float, default=0.5)
-    p.add_argument("--ada_kimg",        type=float, default=50.0,
+    p.add_argument("--ada_kimg",        type=float, default=25.0,
                    help="Kimgs over which ADA ramps p by 1 (higher = slower)")
     p.add_argument("--ada_interval",    type=int,   default=4)
 
     # Checkpointing
     p.add_argument("--save_every_kimgs", type=float, default=1000)
-    p.add_argument("--ckpt_path",       type=str,   default="checkpoints/stylegan2")
+    p.add_argument("--ckpt_path",       type=str,   default="/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2")
     p.add_argument("--resume",          type=str,   default=None,
                    help="Path to checkpoint to resume from")
 
     # Misc
     p.add_argument("--device",          type=str,   default="cuda")
-    p.add_argument("--log_every",       type=int,   default=100)
+    p.add_argument("--log_every",       type=int,   default=200)
     p.add_argument("--seed",            type=int,   default=42)
 
     # return p.parse_args()
@@ -140,7 +140,7 @@ def main():
         g_reg_every=0,        
         ema_decay=args.ema_decay,
         save_every_kimgs=args.save_every_kimgs,
-        ckpt_path="/home/elicer/stylegan2-ada/checkpoints/stylegan2",
+        ckpt_path="/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2",
         device=str(device),
         log_every=args.log_every,
         start_step=start_step,

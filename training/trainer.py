@@ -37,7 +37,7 @@ def _save_checkpoint(path: str, *, generator, discriminator, ema, g_opt, d_opt, 
     print(f"  ✓ Saved checkpoint → {path}")
 
 
-def load_checkpoint(path: str, generator, discriminator, ema, g_opt, d_opt, ada_augment):
+def load_checkpoint(path: str, generator, discriminator, ema, g_opt, d_opt, ada):
     """Restores all components from a checkpoint saved by _save_checkpoint."""
     ckpt = torch.load(path, map_location="cpu")
     generator.load_state_dict(ckpt["generator"])
@@ -45,7 +45,7 @@ def load_checkpoint(path: str, generator, discriminator, ema, g_opt, d_opt, ada_
     ema.shadow.load_state_dict(ckpt["ema"])
     g_opt.load_state_dict(ckpt["g_opt"])
     d_opt.load_state_dict(ckpt["d_opt"])
-    ada_augment.set_p(ckpt["ada_p"])
+    ada.p = ckpt["ada_p"]
     return ckpt["step"]
 
 class GeneratorEMA:
@@ -92,7 +92,7 @@ def train(
     ema_decay: float = 0.9999,
     # checkpointing
     save_every_kimgs: float = 1000,
-    ckpt_path: str = "/home/elicer/stylegan2-ada/checkpoints/stylegan2",
+    ckpt_path: str = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2",
     # misc
     device: str = "cuda",
     log_every: int = 100,             # steps
@@ -187,7 +187,8 @@ def train(
             )
             print(log_line, end="")
             log_file.write(log_line)
-            log_file.flush()
+            if step % (log_every * 10) == 0:
+                log_file.flush()
             metrics.clear()
 
         # ------------------------------------------------------------------ #
