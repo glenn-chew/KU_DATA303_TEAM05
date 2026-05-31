@@ -164,7 +164,7 @@ def train(
         fake_aug = ada(fake)   # augment before passing to D
 
         fake_logits = discriminator(fake_aug)
-        g_loss = loss_fn.generator_loss(fake_logits)
+        g_loss = loss_fn.generator_loss(fake_logits, fake_images=fake_aug)
 
         g_opt.zero_grad(set_to_none=True)
         g_loss.backward()
