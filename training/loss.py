@@ -18,8 +18,15 @@ class StyleGAN2Loss:
     fake_loss = F.softplus(fake_logits).mean()
     return real_loss + fake_loss
 
-  def generator_loss(self, fake_logits):
+  def generator_loss(self, fake_logits, fake_images=None):
     loss = F.softplus(-fake_logits).mean()
+    
+    # add channel consistency penalty
+    if fake_images is not None:
+        r, g, b = fake_images[:,0], fake_images[:,1], fake_images[:,2]
+        channel_loss = (r - g).pow(2).mean() + (r - b).pow(2).mean() + (g - b).pow(2).mean()
+        loss = loss +  1.0 * channel_loss
+    
     return loss
 
   def r1_penalty(self, real_images, real_logits):

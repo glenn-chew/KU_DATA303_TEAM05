@@ -21,7 +21,7 @@ def parse_args():
     p.add_argument("--z_dim",           type=int,   default=512)
 
     # Training schedule
-    p.add_argument("--total_kimgs",     type=float, default=2000)
+    p.add_argument("--total_kimgs",     type=float, default=1000)
     p.add_argument("--d_reg_every",     type=int,   default=16,
                    help="R1 regularisation interval (lazy reg)")
     p.add_argument("--g_reg_every",     type=int,   default=4,
@@ -36,8 +36,8 @@ def parse_args():
     p.add_argument("--ema_decay",       type=float, default=0.9999)
 
     # ADA
-    p.add_argument("--ada_target",      type=float, default=0.5)
-    p.add_argument("--ada_kimg",        type=float, default=25.0,
+    p.add_argument("--ada_target",      type=float, default=0.6)
+    p.add_argument("--ada_kimg",        type=float, default=100.0,
                    help="Kimgs over which ADA ramps p by 1 (higher = slower)")
     p.add_argument("--ada_interval",    type=int,   default=4)
 

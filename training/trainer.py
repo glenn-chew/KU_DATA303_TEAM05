@@ -164,7 +164,7 @@ def train(
         fake_aug = ada(fake)   # augment before passing to D
 
         fake_logits = discriminator(fake_aug)
-        g_loss = loss_fn.generator_loss(fake_logits)
+        g_loss = loss_fn.generator_loss(fake_logits, fake_images=fake_aug)
 
         g_opt.zero_grad(set_to_none=True)
         g_loss.backward()
@@ -190,6 +190,15 @@ def train(
             if step % (log_every * 10) == 0:
                 log_file.flush()
             metrics.clear()
+
+        # temporary debug — remove after confirming channels are balanced
+        if step % 200 == 0 and step <= 1000:
+            with torch.no_grad():
+                test_z = _sample_z(4, z_dim, device)
+                test_img = generator(test_z)
+                print(f"  R mean: {test_img[:,0].mean():.3f}  "
+                    f"G mean: {test_img[:,1].mean():.3f}  "
+                    f"B mean: {test_img[:,2].mean():.3f}")
 
         # ------------------------------------------------------------------ #
         # 4.  Checkpointing
