@@ -134,6 +134,7 @@ class ToRGB(nn.Module):
         demodulate=False
         )
     self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
+    nn.init.normal_(self.conv.weight, mean=0.0, std=0.02)
 
   def forward(self, x, style, skip=None):
     x = self.conv(x, style)
