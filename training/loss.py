@@ -25,7 +25,7 @@ class StyleGAN2Loss:
     if fake_images is not None:
         r, g, b = fake_images[:,0], fake_images[:,1], fake_images[:,2]
         channel_loss = (r - g).pow(2).mean() + (r - b).pow(2).mean() + (g - b).pow(2).mean()
-        loss = loss + 0.1 * channel_loss
+        loss = loss +  1.0 * channel_loss
     
     return loss
 
