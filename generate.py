@@ -11,7 +11,7 @@ from networks.generator import Generator
 Z_DIM = 512
 IMAGE_SIZE = 64
 CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_final.pt"
-# CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_1000kimgs.pt"
+# CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_2000kimgs.pt"
 OUTPUT_DIR = "/home/elicer/KU_DATA303_TEAM05/samples"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
