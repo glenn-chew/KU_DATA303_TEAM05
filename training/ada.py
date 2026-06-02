@@ -1,5 +1,6 @@
-import kornia.augmentation as K
 import torch
+import torchvision.transforms.functional as TF
+import random
 
 class ADA:
   def __init__(
@@ -24,72 +25,44 @@ class ADA:
     self.ada_stats = None
     self.batch_count = 0
 
-    self.color_aug = K.ColorJitter(
-        brightness=0.1,
-        contrast=0.1,
-        saturation=0.1,
-        hue=0.1,
-        p=1.0)
-    self.geometric_aug = K.AugmentationSequential(
-      K.RandomHorizontalFlip(p=0.5),
-      K.RandomAffine(
-          degrees=0,
-          translate=(0.125,0.125),
-          scale=(0.8,1.2),
-          p=1.0
-      ),
-      K.RandomRotation(degrees=10, p=0.5),
-    )
-    self.filtering_aug = K.AugmentationSequential(
-        K.RandomGaussianBlur(kernel_size=(3,3), sigma=(0.1,2.0), p=0.5),
-        K.RandomSharpness(sharpness=0.5, p=0.5),
-    )
-
-  def _augment_color(self, images):
-    return self.color_aug(images)
-  def _augment_geometric(self, images):
-    return self.geometric_aug(images)
-  def _augment_filtering(self, images):
-    return self.filtering_aug(images)
-
 
   def __call__(self, images):
     # images: [B,3,H,W], augmented: [B,3,H,W]
     if self.p <= 0:
       return images
 
-    batch_size = images.shape[0]
+    B = images.shape[0]
+    augment_mask = torch.rand(B, device=images.device) < self.p
 
-    # randomly select which images to augmenta nd create mask for each image in batch
-    augment_mask = torch.rand(batch_size, device=images.device) < self.p
+    if not augment_mask.any():
+      return images
 
-    # rescale to [0, 1] for Kornia
-    if images.min() < 0:
-      images1 = (images + 1.0) / 2.0
-    else:
-      images1 = images
+    # rescale to [0, 1] for transforms
+    in_neg_one = images.min() < 0
+    images_01 = (images + 1.0) / 2.0 if in_neg_one else images
 
-    # clone images to prevent modifying in-place
-    augmented = images1.clone()
+    augmented = images_01.clone()
+    selected = images_01[augment_mask]
 
-    # apply mask to selected images
-    if augment_mask.any():
-      selected_images = images1[augment_mask]
-
+    # process each image individually
+    result = []
+    for img in selected:
       if self.use_color:
-        selected_images = self._augment_color(selected_images)
-
+        img = TF.adjust_brightness(img, 1 + random.uniform(-0.2, 0.2))
+        img = TF.adjust_contrast(img, 1 + random.uniform(-0.2, 0.2))
+        img = TF.adjust_saturation(img, 1 + random.uniform(-0.2, 0.2))
+        img = TF.adjust_hue(img, random.uniform(-0.1, 0.1))
       if self.use_geometric:
-        selected_images = self._augment_geometric(selected_images)
+        if random.random() < 0.5:
+          img = TF.hflip(img)
+        angle = random.uniform(-15, 15)
+        img = TF.rotate(img, angle)
+      result.append(img)
 
-      if self.use_filtering:
-        selected_images = self._augment_filtering(selected_images)
+    augmented[augment_mask] = torch.stack(result)
 
-      augmented[augment_mask] = selected_images
-
-    # convert back to [-1, 1]
-    if images.min() < 0:
-      augmented = (augmented - 0.5) * 2.0
+    if in_neg_one:
+      augmented = augmented * 2.0 - 1.0
 
     return augmented
 
