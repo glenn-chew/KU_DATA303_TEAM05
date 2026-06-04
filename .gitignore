@@ -11,6 +11,16 @@ checkpoints/
 samples/
 *.png
 
+fid_samples/
+*.png
+
+augmentation_viz/
+*.png
+
+baseline_augmentation/
+*.png
+
+
 # logs
 *.txt
 
