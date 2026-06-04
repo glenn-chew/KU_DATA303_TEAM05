@@ -11,7 +11,7 @@ from networks.generator import Generator
 Z_DIM = 512
 IMAGE_SIZE = 64
 CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_final.pt"
-# CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_2000kimgs.pt"
+# CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_15000kimgs.pt"
 OUTPUT_DIR = "/home/elicer/KU_DATA303_TEAM05/samples"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -27,15 +27,25 @@ generator.eval()
 generator.compute_w_mean(n_samples=10000, device=device)
 
 # 1. sample grids at different truncation values
-z = torch.randn(16, Z_DIM, device=device)  # fixed z for fair comparison
-for psi in [0.5, 0.7, 1.0]:
-    with torch.no_grad():
-        imgs = generator(z, truncation_psi=psi)
-        imgs = (imgs.clamp(-1, 1) + 1) / 2
-    vutils.save_image(imgs, f"{OUTPUT_DIR}/grid_psi{psi}.png", nrow=4, padding=2)
-    print(f"✓ Saved grid_psi{psi}.png")
+# z = torch.randn(16, Z_DIM, device=device)  # fixed z for fair comparison
+
+# in generate.py, generate several grids with different random seeds
+for seed in [42, 123, 456, 789, 1024, 2048, 9999, 31415]:
+    torch.manual_seed(seed)
+    z = torch.randn(16, Z_DIM, device=device)
+    for psi in [0.5, 0.7, 1.0]:
+        with torch.no_grad():
+            imgs = generator(z, truncation_psi=psi)
+            imgs = (imgs.clamp(-1, 1) + 1) / 2
+        vutils.save_image(
+            imgs,
+            f"{OUTPUT_DIR}/grid_seed{seed}_psi{psi}.png",
+            nrow=4, padding=2
+        )
+    print(f"✓ Saved grids for seed {seed}")
 
 # 2. latent interpolation (shows smooth latent space)
+torch.manual_seed(42)
 z1 = torch.randn(1, Z_DIM, device=device)
 z2 = torch.randn(1, Z_DIM, device=device)
 alphas = torch.linspace(0, 1, 8, device=device)
