@@ -37,7 +37,7 @@ def build_dataloader(
     initial_ada_p: float = 0.0,
     pin_memory: bool = True,
     streaming: bool = False,
-    max_samples: int=10000,
+    max_samples: int=None,
     local_dir="/home/elicer/ffhq_data",
 ):
     transform = T.Compose([
