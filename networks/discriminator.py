@@ -54,6 +54,26 @@ class ResBlock(nn.Module):
 
     return out 
 
+class MinibatchStdDev(nn.Module):
+    def __init__(self, group_size=4, num_features=1):
+        super().__init__()
+        self.group_size = group_size
+        self.num_features = num_features
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        G = min(self.group_size, B)
+        F = self.num_features
+        c = C // F
+
+        y = x.reshape(G, -1, F, c, H, W)
+        y = y - y.mean(dim=0, keepdim=True)
+        y = (y.pow(2).mean(dim=0) + 1e-8).sqrt()
+        y = y.mean(dim=[2, 3, 4], keepdim=True).squeeze(3).squeeze(2)
+        y = y.expand(G, -1, H, W)
+        y = y.reshape(B, F, H, W)
+        return torch.cat([x, y], dim=1)
+
 class FromRGB(nn.Module):
   def __init__(self, out_channels):
     super().__init__()
@@ -80,6 +100,8 @@ class Discriminator(nn.Module):
     log_resolution = int(np.log2(img_resolution))
     # self.log_resolution = int(torch.log2(torch.tensor(img_resolution)).item())
 
+    self.minibatch_std = MinibatchStdDev()
+
     # RGB layer
     init_channels = min(channel_base // img_resolution, channel_max)
     self.from_rgb = FromRGB(init_channels)
@@ -94,7 +116,7 @@ class Discriminator(nn.Module):
       in_channels = out_channels
 
     # Final layers (4x4)
-    self.final_conv = EqualConv2d(in_channels, in_channels, 3, padding=1)
+    self.final_conv = EqualConv2d(in_channels + 1, in_channels, 3, padding=1)
     self.final_linear = nn.Linear(in_channels * 4 * 4, in_channels)
     self.output_linear = nn.Linear(in_channels, 1)
 
@@ -112,6 +134,7 @@ class Discriminator(nn.Module):
 
     # final layers
     B = x.shape[0]
+    x = self.minibatch_std(x)
     x = self.final_conv(x)
     x = self.act(x)
 
