@@ -11,10 +11,7 @@ class ADA:
       ada_interval=4,
       use_color=True,
       use_geometric=True,
-      use_filtering=False,
-      use_frequency=False,
-      use_cutout=False,
-      use_adaptive_cutout=False,
+      use_blit=True,
   ):
 
     self.p = augment_p
@@ -23,84 +20,97 @@ class ADA:
     self.ada_interval = ada_interval
     self.use_color = use_color
     self.use_geometric = use_geometric
-    self.use_filtering = use_filtering
-    self.use_frequency = use_frequency
-    self.use_cutout = use_cutout
-    self.use_adaptive_cutout = use_adaptive_cutout
+    self.use_blit = use_blit
 
     self.ada_stats = None
     self.batch_count = 0
 
-  def _augment_filtering(self, img):
-    # gaussian blur
-    if random.random() < 0.5:
-      kernel_size = random.choice([3, 5])
-      sigma = random.uniform(0.1, 2.0)
-      img = TF.gaussian_blur(img, kernel_size, sigma)
-    # sharpening
-    else:
-      sharpness = random.uniform(0.5, 2.0)
-      img = TF.adjust_sharpness(img, sharpness)
-    return img
-  
-  def _augment_cutout(self, img):
+  def _augment_blit(self, img):
     h, w = img.shape[1], img.shape[2]
 
-    #fixed at 0.5
-    cut_size = int(0.5 * min(h,w))
-    cut_size = (max(4, cut_size)) #min 4px
+    # x-flip
+    if random.random() < self.p:
+      i = random.randint(0, 1)
+      if i == 1:
+        img = TF.hflip(img)
+    
+    # 90 degree rotation
+    if random.random() < self.p:
+      i = random.randint(0,3)
+      if i > 0:
+        img = torch.rot90(img, i , dims=[1,2])
 
-    x1 = randomrandint(0, w - cut_size)
-    y1 = randomrandint(0, h - cut_size)
-    img = img.clone()
-    img[:, y1:y1+cut_size, x1:x1+cut_size] = 0
+    # integer translation
+    if random.random() < self.p:
+      tx = random.uniform(-0.125, 0.125)
+      ty = random.uniform(-0.125, 0.125)
+      tx_pixels = round(tx*w)
+      ty_pixels = round(ty * h)
+      img = torch.roll(img, shifts=(ty_pixels, tx_pixels), dims=(1,2))
+    
     return img
 
-  def _augment_adaptive_cutout(self, img):
+  def _augment_geom(self, img):
     h, w = img.shape[1], img.shape[2]
 
-    #scale size with ada_p
-    min_size = 0.1
-    max_size = 0.5
-    cut_ratio = min_size + (max_size - min_size) * self.p
-    cut_size = int(cut_ratio * min(h,w))
-    cut_size = max(4, cut_size) #minimum 4px
+    # isotropic scaling
+    if random.random() < self.p:
+      s = 2 ** (random.gauss(0, 0.2))
+      new_h = max(4, int(h * s))
+      new_w = max(4, int(w * s))
+      img = TF.resize(img, [new_h, new_w], antialias=True)
+      img = TF.center_crop(img, [h, w]) if s > 1 else TF.pad(
+          img, [(w - new_w)//2, (h - new_h)//2,
+                (w - new_w+1)//2, (h - new_h+1)//2]
+      )
 
-    x1 = randomrandint(0, w - cut_size)
-    y1 = randomrandint(0, h - cut_size)
-    img = img.clone()
-    img[:, y1:y1+cut_size, x1:x1+cut_size] = 0
+    # arbitrary rotation
+    if random.random() < self.p:
+      angle = random.uniform(-180, 180)
+      img = TF.rotate(img, angle)
+
+    # fractionla translation
+    if random.random() < self.p:
+      tx_frac = random.gauss(0, 0.125) * w
+      ty_frac = random.gauss(0, 0.125) * h
+      img = TF.affine(img, angle=0, translate=[tx_frac, ty_frac],
+                      scale=1.0, shear=0)
+
     return img
   
-  # def _augment_frequency(self, img):
-  #   # convert to frequency domain
-  #   fft = torch.fft.fft2(img)
-  #   fft_shifted = torch.fft.fftshift(fft)
+  def _augment_color(self, img):
+    # brightness
+    if random.random() < self.p:
+      b = random.gauss(0, 0.2)
+      img = (img + b).clamp(0, 1)
 
-  #   # create high frequency mask
-  #   h, w = img.shape[1], img.shape[2]
-  #   center_h, center_w = h // 2, w // 2
-  #   radius = min(h, w) // 3  # low frequency radius
+    # contrast
+    if random.random() < self.p:
+      c = 2**random.gauss(0, 0.5)
+      img = ((img-0.5) * c + 0.5).clamp(0, 1)
 
-  #   y, x = torch.meshgrid(
-  #     torch.arange(h, device=img.device),
-  #     torch.arange(w, device=img.device),
-  #     indexing='ij'
-  #   )
-  #   dist = ((y - center_h) ** 2 + (x - center_w) ** 2).sqrt()
+    # luma flip
+    if random.random() < self.p:
+      i = random.randint(0, 1)
+      if i == 1:
+        img = 1.0 - img
+      
+    # hue rotation
+    if random.random() < self.p:
+      angle = random.uniform(-180, 180)
+      img = TF.adjust_hue(img, angle/360)
+    
+    # saturation
+    if random.random() < self.p:
+      s = 2 ** random.gauss(0, 1.0)
+      img = TF.adjust_saturation(img, s)
 
-  #   # attenuate high frequencies
-  #   attenuation = random.uniform(0.3, 0.7)
-  #   freq_mask = torch.where(dist > radius,
-  #                           torch.ones_like(dist) * attenuation,
-  #                           torch.ones_like(dist))
+    return img.clamp(0, 1)
 
-  #   fft_shifted = fft_shifted * freq_mask.unsqueeze(0)
-  #   fft = torch.fft.ifftshift(fft_shifted)
-  #   img = torch.fft.ifft2(fft).real
-  #   img = img.clamp(0, 1)
-  #   return img
 
+    
+
+ 
   def __call__(self, images):
     # images: [B,3,H,W], augmented: [B,3,H,W]
     if self.p <= 0:
@@ -123,25 +133,11 @@ class ADA:
     result = []
     for img in selected:
       if self.use_color:
-        img = TF.adjust_brightness(img, 1 + random.uniform(-0.2, 0.2))
-        img = TF.adjust_contrast(img, 1 + random.uniform(-0.2, 0.2))
-        img = TF.adjust_saturation(img, 1 + random.uniform(-0.2, 0.2))
-        img = TF.adjust_hue(img, random.uniform(-0.1, 0.1))
+        img = self._augment_color(img)
       if self.use_geometric:
-        if random.random() < 0.5:
-          img = TF.hflip(img)
-        angle = random.uniform(-15, 15)
-        img = TF.rotate(img, angle)
-      
-      if self.use_filtering:
-        img = self._augment_filtering(img)
-      if self.use_frequency:
-        img = self._augment_frequency(img)
-      
-      if self.use_adaptive_cutout
-        img = self._augment_adaptive_cutout(img)
-      if self.use_cutout
-        img = self._augment_cutout(cutout)
+        img = self._augment_geom(img)
+      if self.use_blit:
+        img = self._augment_blit(img)
       
       result.append(img)
 
