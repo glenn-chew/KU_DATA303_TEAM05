@@ -1,6 +1,7 @@
 import torch
 import torchvision.transforms.functional as TF
 import random
+import numpy as np
 
 class ADA:
   def __init__(
@@ -51,59 +52,41 @@ class ADA:
     return img
 
   def _augment_geometric(self, img):
-    h, w = img.shape[1], img.shape[2]
+    # rotation
+    angle = random.uniform(-15, 15) if random.random() < self.p else 0 
 
-    # isotropic scaling
-    if random.random() < self.p:
-      s = 2 ** (random.gauss(0, 0.2))
-      new_h = max(4, int(h * s))
-      new_w = max(4, int(w * s))
-      img = TF.resize(img, [new_h, new_w], antialias=True)
-      img = TF.center_crop(img, [h, w]) if s > 1 else TF.pad(
-          img, [(w - new_w)//2, (h - new_h)//2,
-                (w - new_w+1)//2, (h - new_h+1)//2]
-      )
+    # translation
+    tx = random.uniform(-0.125, 0.125) * img.shape[2] if random.random() < self.p else 0 
+    ty = random.uniform(-0.125, 0.125) * img.shape[1] if random.random() < self.p else 0
 
-    # arbitrary rotation
-    if random.random() < self.p:
-      angle = random.uniform(-180, 180)
-      img = TF.rotate(img, angle)
-
-    # fractionla translation
-    if random.random() < self.p:
-      tx_frac = random.gauss(0, 0.125) * w
-      ty_frac = random.gauss(0, 0.125) * h
-      img = TF.affine(img, angle=0, translate=[tx_frac, ty_frac],
-                      scale=1.0, shear=0)
-
+    # isotropic scale
+    scale = float(np.clip(2 ** random.gauss(0, 0.2), 0.75, 1.33)) if random.random() < self.p else 1.0 
+    
+    img = TF.affine(
+        img,
+        angle=angle,
+        translate=[tx, ty],
+        scale=scale,
+        shear=0
+    )
     return img
   
   def _augment_color(self, img):
     # brightness
     if random.random() < self.p:
-      b = random.gauss(0, 0.2)
-      img = (img + b).clamp(0, 1)
+      img = TF.adjust_brightness(img, 1 + random.uniform(-0.2, 0.2))
 
     # contrast
     if random.random() < self.p:
-      c = float(np.clip(2 ** random.gauss(0, 0.5), 0.5, 2.0))
-      img = ((img-0.5) * c + 0.5).clamp(0, 1)
-
-    # luma flip
-    if random.random() < self.p:
-      i = random.randint(0, 1)
-      if i == 1:
-        img = 1.0 - img
+      img = TF.adjust_contrast(img, 1 + random.uniform(-0.2, 0.2))
       
     # hue rotation
     if random.random() < self.p:
-      angle = random.uniform(-180, 180)
-      img = TF.adjust_hue(img, angle/360)
+      img = TF.adjust_hue(img, random.uniform(-0.1, 0.1))
     
     # saturation
     if random.random() < self.p:
-      s = float(np.clip(2 ** random.gauss(0, 1.0), 0.1, 3.0))
-      img = TF.adjust_saturation(img, s)
+      img = TF.adjust_saturation(img, 1 + random.uniform(-0.2, 0.2))
 
     return img.clamp(0, 1)
 
