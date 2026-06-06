@@ -31,7 +31,7 @@ class EqualConv2d(nn.Module):
     )
   
 class ResBlock(nn.Module):
-  def __init__(self, in_channels, out_channels, downsample=True):
+  def __init__(self, in_channels, out_channels, downsample=True, dropout_p=0.0):
     super().__init__()
 
     self.conv1 = EqualConv2d(in_channels, in_channels, 3, padding=1)
@@ -39,9 +39,11 @@ class ResBlock(nn.Module):
     self.skip = EqualConv2d(in_channels, out_channels, 1)
     self.act = nn.LeakyReLU(0.2)
     self.downsample = downsample
+    self.dropout = nn.Dropout2d(p=dropout_p)
   def forward(self, x):
     out = self.conv1(x)
     out = self.act(out)
+    out = self.dropout(out)
     out = self.conv2(out)
     out = self.act(out)
 
@@ -91,7 +93,8 @@ class Discriminator(nn.Module):
                img_channels=3,
                img_resolution=256,
                channel_base=32768,
-               channel_max=512):
+               channel_max=512,
+               dropout_p=0.0):
     super().__init__()
 
     self.img_channels = img_channels
@@ -112,7 +115,7 @@ class Discriminator(nn.Module):
 
     for res in range(log_resolution, 2, -1):
       out_channels = min(channel_base // (2 ** res), channel_max)
-      self.blocks.append(ResBlock(in_channels, out_channels, downsample=True))
+      self.blocks.append(ResBlock(in_channels, out_channels, downsample=True, dropout_p=dropout_p))
       in_channels = out_channels
 
     # Final layers (4x4)
