@@ -74,7 +74,7 @@ def main():
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         image_size=args.image_size,
-        max_samples=None,
+        max_samples=2000,
     )
     print(f"Dataset loaded: {len(dataloader.dataset):,} images")
 

@@ -50,7 +50,7 @@ class ADA:
     
     return img
 
-  def _augment_geom(self, img):
+  def _augment_geometric(self, img):
     h, w = img.shape[1], img.shape[2]
 
     # isotropic scaling
@@ -86,7 +86,7 @@ class ADA:
 
     # contrast
     if random.random() < self.p:
-      c = 2**random.gauss(0, 0.5)
+      c = float(np.clip(2 ** random.gauss(0, 0.5), 0.5, 2.0))
       img = ((img-0.5) * c + 0.5).clamp(0, 1)
 
     # luma flip
@@ -102,50 +102,33 @@ class ADA:
     
     # saturation
     if random.random() < self.p:
-      s = 2 ** random.gauss(0, 1.0)
+      s = float(np.clip(2 ** random.gauss(0, 1.0), 0.1, 3.0))
       img = TF.adjust_saturation(img, s)
 
     return img.clamp(0, 1)
-
-
-    
 
  
   def __call__(self, images):
     # images: [B,3,H,W], augmented: [B,3,H,W]
     if self.p <= 0:
-      return images
+        return images
 
-    B = images.shape[0]
-    augment_mask = torch.rand(B, device=images.device) < self.p
-
-    if not augment_mask.any():
-      return images
-
-    # rescale to [0, 1] for transforms
     in_neg_one = images.min() < 0
     images_01 = (images + 1.0) / 2.0 if in_neg_one else images
 
-    augmented = images_01.clone()
-    selected = images_01[augment_mask]
-
-    # process each image individually
     result = []
-    for img in selected:
-      if self.use_color:
-        img = self._augment_color(img)
-      if self.use_geometric:
-        img = self._augment_geom(img)
-      if self.use_blit:
-        img = self._augment_blit(img)
-      
-      result.append(img)
+    for img in images_01:
+        if self.use_blit:
+            img = self._augment_blit(img)
+        if self.use_geometric:
+            img = self._augment_geometric(img)
+        if self.use_color:
+            img = self._augment_color(img)
+        result.append(img)
 
-    augmented[augment_mask] = torch.stack(result)
-
+    augmented = torch.stack(result)
     if in_neg_one:
-      augmented = augmented * 2.0 - 1.0
-
+        augmented = augmented * 2.0 - 1.0
     return augmented
 
   def update_p(self, rt_sign):

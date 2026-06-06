@@ -20,7 +20,7 @@ print("✓ Saved original.png")
 
 # visualize at different p values
 for p in [0.25, 0.5, 0.75, 1.0]:
-    ada = ADA(augment_p=p, use_color=True, use_geometric=True, use_filtering=True, use_frequency=True)
+    ada = ADA(augment_p=p, use_color=True, use_geometric=True, use_blit=True)
     augmented = ada(real)
     augmented_01 = (augmented.clamp(-1, 1) + 1) / 2
     vutils.save_image(augmented_01, f"{OUTPUT_DIR}/augmented_p{p}.png", nrow=8, padding=2)
@@ -28,10 +28,9 @@ for p in [0.25, 0.5, 0.75, 1.0]:
 
 # visualize individual augmentation types
 for name, kwargs in [
-    ("color_only",     {"use_color": True,  "use_geometric": False, "use_filtering": False}),
-    ("geometric_only", {"use_color": False, "use_geometric": True,  "use_filtering": False}),
-    ("filtering_only", {"use_color": False, "use_geometric": False, "use_filtering": True}),
-    ("freqeuncy_only", {"use_color": False, "use_geometric": False, "use_filtering": False, "use_frequency": True})
+    ("color_only",     {"use_color": True,  "use_geometric": False, "use_blit": False}),
+    ("geometric_only", {"use_color": False, "use_geometric": True,  "use_blit": False}),
+    ("blit_only", {"use_color": False, "use_geometric": False, "use_blit": True})
 ]:
     ada = ADA(augment_p=1.0, **kwargs)
     augmented = ada(real)
