@@ -41,7 +41,7 @@ def parse_args():
     p.add_argument("--ada_kimg",        type=float, default=100.0,
                    help="Kimgs over which ADA ramps p by 1 (higher = slower)")
     p.add_argument("--ada_interval",    type=int,   default=4)
-    p.add_argument("--use_ada",         type=bool,  default=True)
+    p.add_argument('--use_ada', type=lambda x: x.lower() == 'false', default=True)
 
     # Checkpointing
     p.add_argument("--save_every_kimgs", type=float, default=1000)
