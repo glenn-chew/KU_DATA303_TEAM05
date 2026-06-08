@@ -13,6 +13,7 @@ class ADA:
       use_color=True,
       use_geometric=True,
       use_blit=True,
+      use_ada=True,
   ):
 
     self.p = augment_p
@@ -22,6 +23,7 @@ class ADA:
     self.use_color = use_color
     self.use_geometric = use_geometric
     self.use_blit = use_blit
+    self.use_ada = use_ada
 
     self.ada_stats = None
     self.batch_count = 0
@@ -115,6 +117,8 @@ class ADA:
     return augmented
 
   def update_p(self, rt_sign):
+    if not self.use_ada:
+      return
 
     # if Discriminator is to confident on real images,
     # increase augmentation probability
