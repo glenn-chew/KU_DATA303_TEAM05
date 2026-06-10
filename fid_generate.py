@@ -5,11 +5,14 @@ import torchvision.utils as vutils
 from networks.generator import Generator
 from cleanfid import fid
 
-device = torch.device("cuda")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Z_DIM = 512
 IMAGE_SIZE = 64
-CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_final.pt"
-FAKE_DIR = "/home/elicer/KU_DATA303_TEAM05/fid_samples/fake"
+# CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_final.pt"
+# FAKE_DIR = "/home/elicer/KU_DATA303_TEAM05/fid_samples/fake"
+CKPT_PATH = "/checkpoints/stylegan2_final.pt"
+FAKE_DIR = "/fid_samples/fake"
+
 
 os.makedirs(FAKE_DIR, exist_ok=True)
 
@@ -41,6 +44,6 @@ score = fid.compute_fid(
     "/home/elicer/ffhq_data/images/",  # real images folder
     "/home/elicer/KU_DATA303_TEAM05/fid_samples/fake",  # fake images folder
     mode="clean",
-    device=torch.device("cuda"),
+    device=device,
 )
 print(f"FID: {score:.2f}")
