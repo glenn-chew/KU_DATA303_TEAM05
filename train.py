@@ -19,7 +19,8 @@ def parse_args():
 
     # Architecture
     p.add_argument("--z_dim",           type=int,   default=512)
-    p.add_argument("--dropout_p", type=float, default=0.0)
+    p.add_argument("--dropout_p",       type=float, default=0.0)
+    p.add_argument("--adaptive", type=lambda x: x.lower() == 'true', default=False)
 
     # Training schedule
     p.add_argument("--total_kimgs",     type=float, default=1000)
@@ -84,7 +85,7 @@ def main():
     # Models 
     # ------------------------------------------------------------------ #
     generator     = Generator(z_dim=args.z_dim, img_resolution=args.image_size).to(device)
-    discriminator = Discriminator(img_resolution=args.image_size,channel_base=8192, channel_max=256, dropout_p=args.dropout_p).to(device)
+    discriminator = Discriminator(img_resolution=args.image_size,channel_base=8192, channel_max=256, dropout_p=args.dropout_p, adaptive=args.adaptive).to(device)
 
     # ------------------------------------------------------------------ #
     # Loss
