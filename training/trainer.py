@@ -193,8 +193,8 @@ def train(
                 f"step {step:7d}  kimg {kimg:8.1f}"
                 f"  d_loss {d_loss.item():.4f}"
                 f"  g_loss {g_loss.item():.4f}"
-                f"  ada_p {ada.p:.3f}\n"
-                f"  dropout_p {dropout_p:.3f}"
+                f"  ada_p {ada.p:.3f}"
+                f"  dropout_p {dropout_p:.3f}\n"
             )
             print(log_line, end="")
             log_file.write(log_line)
