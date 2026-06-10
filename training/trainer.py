@@ -48,6 +48,15 @@ def load_checkpoint(path: str, generator, discriminator, ema, g_opt, d_opt, ada)
     ada.p = ckpt["ada_p"]
     return ckpt["step"]
 
+def get_dropout_p(discriminator):
+    for block in discriminator.blocks:
+        if hasattr(block, 'dropout'):
+            if hasattr(block.dropout, 'current_p'):
+                return block.dropout.current_p  # adaptive
+            else:
+                return block.dropout.p  # fixed
+    return 0.0
+
 class GeneratorEMA:
     """Keeps a shadow copy of the generator with exponential moving average."""
 
@@ -98,7 +107,7 @@ def train(
     log_every: int = 100,             # steps
     start_step: int = 0,
 ):
-    log_file = open(f"{ckpt_path}_log.txt", "w")
+    log_file = open(f"{ckpt_path}_log.txt", "a")
     device = torch.device(device)
     generator = generator.to(device).train()
     discriminator = discriminator.to(device).train()
@@ -179,11 +188,13 @@ def train(
         #     metrics[k] += v.item() if torch.is_tensor(v) else float(v)
 
         if step % log_every == 0 and step > 0:
+            dropout_p = get_dropout_p(discriminator)
             log_line = (
                 f"step {step:7d}  kimg {kimg:8.1f}"
                 f"  d_loss {d_loss.item():.4f}"
                 f"  g_loss {g_loss.item():.4f}"
                 f"  ada_p {ada.p:.3f}\n"
+                f"  dropout_p {dropout_p:.3f}"
             )
             print(log_line, end="")
             log_file.write(log_line)
