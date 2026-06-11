@@ -164,6 +164,9 @@ def train(
         rt_sign = real_logits.detach().sign().float().mean().item()
         ada.update_p(rt_sign)
 
+        progress = step / total_steps
+        discriminator.set_dropout_p(progress)
+
 
         # ------------------------------------------------------------------ #
         # 2.  Generator step

@@ -6,7 +6,7 @@ from training.trainer import train, load_checkpoint, GeneratorEMA
 from training.ada import ADA
 
 from networks.generator import Generator
-from networks.discriminator import Discriminator
+from networks.discriminator import Discriminator, AdaptiveDropout
 from training.loss import StyleGAN2Loss
 
 def parse_args():
@@ -86,6 +86,8 @@ def main():
     # ------------------------------------------------------------------ #
     generator     = Generator(z_dim=args.z_dim, img_resolution=args.image_size).to(device)
     discriminator = Discriminator(img_resolution=args.image_size,channel_base=8192, channel_max=256, dropout_p=args.dropout_p, adaptive=args.adaptive).to(device)
+    print(f"dropout type: {type(discriminator.blocks[0].dropout)}")
+    print(f"is adaptive: {isinstance(discriminator.blocks[0].dropout, AdaptiveDropout)}")
 
     # ------------------------------------------------------------------ #
     # Loss
@@ -98,7 +100,7 @@ def main():
         ada_interval=args.ada_interval,
         use_ada=args.use_ada,
     )
-    print(f"{args.use_ada}\n")
+    print(f"{args.adaptive}\n")
 
     # ------------------------------------------------------------------ #
     # Optimisers

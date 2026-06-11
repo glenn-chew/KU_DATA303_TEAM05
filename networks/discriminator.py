@@ -145,7 +145,7 @@ class Discriminator(nn.Module):
 
     self.act = nn.LeakyReLU(0.2)
 
-  def self_dropout(self, progress):
+  def set_dropout_p(self, progress):
     for block in self.blocks:
       if hasattr(block.dropout, 'set_p'):
         block.dropout.set_p(progress)
