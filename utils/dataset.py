@@ -10,7 +10,7 @@ from PIL import Image
 class FFHQDataset(Dataset):
     def __init__(
         self,
-        root: str = "/home/elicer/ffhq_data/images",
+        root: str = "../ffhq_data/images",
         transform=None,
         max_samples=None,
     ):
@@ -38,7 +38,7 @@ def build_dataloader(
     pin_memory: bool = True,
     streaming: bool = False,
     max_samples: int=2000,
-    local_dir="/home/elicer/ffhq_data",
+    local_dir="../ffhq_data",
 ):
     transform = T.Compose([
         T.ToTensor(),
@@ -63,7 +63,7 @@ def build_dataloader(
 
     return loader
 
-def download_dataset(local_dir="/home/elicer/ffhq_data"):
+def download_dataset(local_dir="../ffhq_data"):
     os.makedirs(local_dir, exist_ok=True)
     
     zip_path = os.path.join(local_dir, "ffhq-64x64.zip")

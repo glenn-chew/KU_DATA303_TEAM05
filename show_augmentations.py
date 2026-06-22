@@ -6,7 +6,7 @@ from utils.dataset import build_dataloader
 from training.ada import ADA
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-OUTPUT_DIR = "/home/elicer/KU_DATA303_TEAM05/augmentations/augmentation_viz"
+OUTPUT_DIR = "./augmentations/augmentation_viz"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # load a batch of real images

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os
 from torch.utils.data import DataLoader
 from copy import deepcopy
 from collections import defaultdict
@@ -23,7 +24,6 @@ def _clip_grad(model: nn.Module, max_norm: float = 1.0):
 
 
 def _save_checkpoint(path: str, *, generator, discriminator, ema, g_opt, d_opt, step, ada_p):
-    import os
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     torch.save({
         "generator":      generator.state_dict(),
@@ -101,12 +101,13 @@ def train(
     ema_decay: float = 0.9999,
     # checkpointing
     save_every_kimgs: float = 1000,
-    ckpt_path: str = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2",
+    ckpt_path: str = "./checkpoints/stylegan2",
     # misc
     device: str = "cuda",
     log_every: int = 100,             # steps
     start_step: int = 0,
-):
+):  
+    os.makedirs(os.path.dirname(ckpt_path) or ".", exist_ok=True)
     log_file = open(f"{ckpt_path}_log.txt", "a")
     device = torch.device(device)
     generator = generator.to(device).train()
@@ -204,15 +205,6 @@ def train(
             if step % (log_every * 10) == 0:
                 log_file.flush()
             metrics.clear()
-
-        # temporary debug — remove after confirming channels are balanced
-        if step % 200 == 0 and step <= 1000:
-            with torch.no_grad():
-                test_z = _sample_z(4, z_dim, device)
-                test_img = generator(test_z)
-                print(f"  R mean: {test_img[:,0].mean():.3f}  "
-                    f"G mean: {test_img[:,1].mean():.3f}  "
-                    f"B mean: {test_img[:,2].mean():.3f}")
 
         # ------------------------------------------------------------------ #
         # 4.  Checkpointing

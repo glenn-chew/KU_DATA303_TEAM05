@@ -1,4 +1,3 @@
-# compute_fid_all.py
 import os
 import torch
 import torchvision.utils as vutils
@@ -15,32 +14,12 @@ CSV_FILE = "./fid_results.csv"
 
 
 MODELS = {
-    # "no_ada": [
-    #     ("5000",  "./noada_eval/stylegan2_5000kimgs.pt"),
-    #     ("10000", "./noada_eval/stylegan2_10000kimgs.pt"),
-    #     ("15000", "./noada_eval/stylegan2_15000kimgs.pt"),
-    #     ("20000", "./noada_eval/stylegan2_20000kimgs.pt"),
-    #     ("25000", "./noada_eval/stylegan2_final.pt"),
-    # ],
-    # "std_ada": [
-    #     ("5000",  "./baseline_eval/stylegan2_5000kimgs.pt"),
-    #     ("10000", "./baseline_eval/stylegan2_10000kimgs.pt"),
-    #     ("15000", "./baseline_eval/stylegan2_15000kimgs.pt"),
-    #     ("20000", "./baseline_eval/stylegan2_20000kimgs.pt"),
-    #     ("25000", "./baseline_eval/stylegan2_final.pt"),
-    # ],
-    # "dropout": [
-        # ("5000",  "./dropout_eval/stylegan2_5000kimgs.pt"),
-        # ("10000", "./dropout_eval/stylegan2_10000kimgs.pt"),
-        # ("15000", "./dropout_eval/stylegan2_15000kimgs.pt"),
-        # ("20000", "./dropout_eval/stylegan2_20000kimgs.pt"),
-        # ("25000", "./dropout_eval/stylegan2_final.pt"),
-    # ],
-    "adaptive": [
+    "result": [
         ("5000", "./checkpoints/stylegan2_5000kimgs.pt"),
         ("10000", "./checkpoints/stylegan2_10000kimgs.pt"),
         ("15000", "./checkpoints/stylegan2_15000kimgs.pt"),
         ("20000", "./checkpoints/stylegan2_20000kimgs.pt"),
+        ("25000", "./checkpoints/stylegan2_final.pt"),
     ]
 }
 

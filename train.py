@@ -46,7 +46,7 @@ def parse_args():
 
     # Checkpointing
     p.add_argument("--save_every_kimgs", type=float, default=1000)
-    p.add_argument("--ckpt_path",       type=str,   default="/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2")
+    p.add_argument("--ckpt_path",       type=str,   default="./checkpoints/stylegan2")
     p.add_argument("--resume",          type=str,   default=None,
                    help="Path to checkpoint to resume from")
 
@@ -147,7 +147,7 @@ def main():
         g_reg_every=0,        
         ema_decay=args.ema_decay,
         save_every_kimgs=args.save_every_kimgs,
-        ckpt_path="/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2",
+        ckpt_path="./checkpoints/stylegan2",
         device=str(device),
         log_every=args.log_every,
         start_step=start_step,
