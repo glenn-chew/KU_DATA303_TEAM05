@@ -53,8 +53,9 @@ python train.py \
 ```
 
 ### Resume from checkpoint:
+To resume from a certain checkpoint, edit the file path to the relevant checkpoint
 ```bash
-python train.py --resume ./checkpoints/stylegan2_final.pt --total_kimgs {checkpoint_number}
+python train.py --resume ./checkpoints/stylegan2_{number}kimgs.pt --total_kimgs 25000
 ```
 
 ### Ablation experiments:
