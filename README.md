@@ -87,6 +87,7 @@ python fid_eval.py
 ```
 
 ## Project Structure
+```
 KU_DATA303_TEAM05/
 ├── networks/
 │   ├── generator.py      # Generator, MappingNetwork, SynthesisNetwork
@@ -106,6 +107,7 @@ KU_DATA303_TEAM05/
 ├── requirements.txt      # Pip dependencies
 ├── environment.yml       # Conda environment
 └── README.md
+```
 
 ## References
 
