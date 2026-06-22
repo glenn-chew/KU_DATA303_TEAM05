@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os
 from torch.utils.data import DataLoader
 from copy import deepcopy
 from collections import defaultdict
@@ -23,7 +24,6 @@ def _clip_grad(model: nn.Module, max_norm: float = 1.0):
 
 
 def _save_checkpoint(path: str, *, generator, discriminator, ema, g_opt, d_opt, step, ada_p):
-    import os
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     torch.save({
         "generator":      generator.state_dict(),
@@ -47,6 +47,15 @@ def load_checkpoint(path: str, generator, discriminator, ema, g_opt, d_opt, ada)
     d_opt.load_state_dict(ckpt["d_opt"])
     ada.p = ckpt["ada_p"]
     return ckpt["step"]
+
+def get_dropout_p(discriminator):
+    for block in discriminator.blocks:
+        if hasattr(block, 'dropout'):
+            if hasattr(block.dropout, 'current_p'):
+                return block.dropout.current_p  # adaptive
+            else:
+                return block.dropout.p  # fixed
+    return 0.0
 
 class GeneratorEMA:
     """Keeps a shadow copy of the generator with exponential moving average."""
@@ -92,13 +101,14 @@ def train(
     ema_decay: float = 0.9999,
     # checkpointing
     save_every_kimgs: float = 1000,
-    ckpt_path: str = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2",
+    ckpt_path: str = "./checkpoints/stylegan2",
     # misc
     device: str = "cuda",
     log_every: int = 100,             # steps
     start_step: int = 0,
-):
-    log_file = open(f"{ckpt_path}_log.txt", "w")
+):  
+    os.makedirs(os.path.dirname(ckpt_path) or ".", exist_ok=True)
+    log_file = open(f"{ckpt_path}_log.txt", "a")
     device = torch.device(device)
     generator = generator.to(device).train()
     discriminator = discriminator.to(device).train()
@@ -155,6 +165,9 @@ def train(
         rt_sign = real_logits.detach().sign().float().mean().item()
         ada.update_p(rt_sign)
 
+        progress = step / total_steps
+        discriminator.set_dropout_p(progress)
+
 
         # ------------------------------------------------------------------ #
         # 2.  Generator step
@@ -179,26 +192,19 @@ def train(
         #     metrics[k] += v.item() if torch.is_tensor(v) else float(v)
 
         if step % log_every == 0 and step > 0:
+            dropout_p = get_dropout_p(discriminator)
             log_line = (
                 f"step {step:7d}  kimg {kimg:8.1f}"
                 f"  d_loss {d_loss.item():.4f}"
                 f"  g_loss {g_loss.item():.4f}"
-                f"  ada_p {ada.p:.3f}\n"
+                f"  ada_p {ada.p:.3f}"
+                f"  dropout_p {dropout_p:.3f}\n"
             )
             print(log_line, end="")
             log_file.write(log_line)
             if step % (log_every * 10) == 0:
                 log_file.flush()
             metrics.clear()
-
-        # temporary debug — remove after confirming channels are balanced
-        if step % 200 == 0 and step <= 1000:
-            with torch.no_grad():
-                test_z = _sample_z(4, z_dim, device)
-                test_img = generator(test_z)
-                print(f"  R mean: {test_img[:,0].mean():.3f}  "
-                    f"G mean: {test_img[:,1].mean():.3f}  "
-                    f"B mean: {test_img[:,2].mean():.3f}")
 
         # ------------------------------------------------------------------ #
         # 4.  Checkpointing

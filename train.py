@@ -6,7 +6,7 @@ from training.trainer import train, load_checkpoint, GeneratorEMA
 from training.ada import ADA
 
 from networks.generator import Generator
-from networks.discriminator import Discriminator
+from networks.discriminator import Discriminator, AdaptiveDropout
 from training.loss import StyleGAN2Loss
 
 def parse_args():
@@ -19,7 +19,8 @@ def parse_args():
 
     # Architecture
     p.add_argument("--z_dim",           type=int,   default=512)
-    p.add_argument("--dropout_p", type=float, default=0.0)
+    p.add_argument("--dropout_p",       type=float, default=0.0)
+    p.add_argument("--adaptive", type=lambda x: x.lower() == 'true', default=False)
 
     # Training schedule
     p.add_argument("--total_kimgs",     type=float, default=1000)
@@ -41,10 +42,11 @@ def parse_args():
     p.add_argument("--ada_kimg",        type=float, default=100.0,
                    help="Kimgs over which ADA ramps p by 1 (higher = slower)")
     p.add_argument("--ada_interval",    type=int,   default=4)
+    p.add_argument('--use_ada', type=lambda x: x.lower() == 'true', default=True)
 
     # Checkpointing
     p.add_argument("--save_every_kimgs", type=float, default=1000)
-    p.add_argument("--ckpt_path",       type=str,   default="/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2")
+    p.add_argument("--ckpt_path",       type=str,   default="./checkpoints/stylegan2")
     p.add_argument("--resume",          type=str,   default=None,
                    help="Path to checkpoint to resume from")
 
@@ -83,7 +85,9 @@ def main():
     # Models 
     # ------------------------------------------------------------------ #
     generator     = Generator(z_dim=args.z_dim, img_resolution=args.image_size).to(device)
-    discriminator = Discriminator(img_resolution=args.image_size,channel_base=8192, channel_max=256, dropout_p=args.dropout_p).to(device)
+    discriminator = Discriminator(img_resolution=args.image_size,channel_base=8192, channel_max=256, dropout_p=args.dropout_p, adaptive=args.adaptive).to(device)
+    print(f"dropout type: {type(discriminator.blocks[0].dropout)}")
+    print(f"is adaptive: {isinstance(discriminator.blocks[0].dropout, AdaptiveDropout)}")
 
     # ------------------------------------------------------------------ #
     # Loss
@@ -94,7 +98,9 @@ def main():
         ada_target=args.ada_target,
         ada_kimg=args.ada_kimg,
         ada_interval=args.ada_interval,
+        use_ada=args.use_ada,
     )
+    print(f"{args.adaptive}\n")
 
     # ------------------------------------------------------------------ #
     # Optimisers
@@ -141,7 +147,7 @@ def main():
         g_reg_every=0,        
         ema_decay=args.ema_decay,
         save_every_kimgs=args.save_every_kimgs,
-        ckpt_path="/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2",
+        ckpt_path="./checkpoints/stylegan2",
         device=str(device),
         log_every=args.log_every,
         start_step=start_step,

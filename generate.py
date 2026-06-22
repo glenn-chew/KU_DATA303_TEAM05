@@ -10,9 +10,9 @@ from networks.generator import Generator
 # config
 Z_DIM = 512
 IMAGE_SIZE = 64
-# CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_final.pt"
-CKPT_PATH = "/home/elicer/KU_DATA303_TEAM05/checkpoints/stylegan2_3000kimgs.pt"
-OUTPUT_DIR = "/home/elicer/KU_DATA303_TEAM05/samples"
+CKPT_PATH = "./checkpoints/stylegan2_final.pt"
+# CKPT_PATH = "./checkpoints/stylegan2_3000kimgs.pt"
+OUTPUT_DIR = "./samples"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

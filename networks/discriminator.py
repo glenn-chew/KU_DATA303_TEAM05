@@ -29,9 +29,24 @@ class EqualConv2d(nn.Module):
         stride=self.stride,
         padding=self.padding
     )
-  
+
+class AdaptiveDropout(nn.Module):
+  def __init__(self, initial_p=0.3, final_p=0.0):
+    super().__init__()
+    self.initial_p = initial_p
+    self.final_p = final_p
+    self.current_p = initial_p
+
+  def set_p(self, progress):
+    self.current_p = self.initial_p + (self.final_p - self.initial_p) * progress
+
+  def forward(self, x):
+    if not self.training or self.current_p <= 0:
+      return x
+    return F.dropout2d(x, p=self.current_p, training=True)
+
 class ResBlock(nn.Module):
-  def __init__(self, in_channels, out_channels, downsample=True, dropout_p=0.0):
+  def __init__(self, in_channels, out_channels, downsample=True, dropout_p=0.0, adaptive=False):
     super().__init__()
 
     self.conv1 = EqualConv2d(in_channels, in_channels, 3, padding=1)
@@ -39,7 +54,11 @@ class ResBlock(nn.Module):
     self.skip = EqualConv2d(in_channels, out_channels, 1)
     self.act = nn.LeakyReLU(0.2)
     self.downsample = downsample
-    self.dropout = nn.Dropout2d(p=dropout_p)
+    if adaptive:
+      self.dropout = AdaptiveDropout(initial_p=dropout_p, final_p=0.0)
+    else:
+      self.dropout = nn.Dropout2d(p=dropout_p)
+
   def forward(self, x):
     out = self.conv1(x)
     out = self.act(out)
@@ -94,7 +113,8 @@ class Discriminator(nn.Module):
                img_resolution=256,
                channel_base=32768,
                channel_max=512,
-               dropout_p=0.0):
+               dropout_p=0.0,
+               adaptive=False):
     super().__init__()
 
     self.img_channels = img_channels
@@ -115,7 +135,7 @@ class Discriminator(nn.Module):
 
     for res in range(log_resolution, 2, -1):
       out_channels = min(channel_base // (2 ** res), channel_max)
-      self.blocks.append(ResBlock(in_channels, out_channels, downsample=True, dropout_p=dropout_p))
+      self.blocks.append(ResBlock(in_channels, out_channels, downsample=True, dropout_p=dropout_p, adaptive=adaptive))
       in_channels = out_channels
 
     # Final layers (4x4)
@@ -125,6 +145,11 @@ class Discriminator(nn.Module):
 
     self.act = nn.LeakyReLU(0.2)
 
+  def set_dropout_p(self, progress):
+    for block in self.blocks:
+      if hasattr(block.dropout, 'set_p'):
+        block.dropout.set_p(progress)
+        
   def forward(self, img):
     #img: [B, 3, Res, Res], score: [B, 1] (real/fake)
 
